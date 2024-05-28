@@ -46,44 +46,44 @@ describe("context", () => {
     })
   })
 
-  test("execute function", () => {
-    const main = new Context("main")
+  test("execute function", (t) => {
+    const main = new Context(t.name)
+    const mainLogger = ConsoleContextLogger.from(main)
     try {
-      const mainLogger = ConsoleContextLogger.from(main)
       mainLogger.log("starting")
-      const func = (count) => {
+      const func = (logger, count) => {
         for (let i = 0; i < count; i++) {
-          console.log(i)
+          logger.log(i)
         }
         return count + 1
       }
       const max = 5
-      const funcContext = main.exec(funcContext => {
+      const result = main.exec(funcContext => {
         const funcLogger = ConsoleContextLogger.from(funcContext)
         funcLogger.log("starting")
-        return func(max)
+        return func(funcLogger, max)
       })
-      assert.equal(funcContext.status, Context.STATUS_STOPPED)
-      assert.equal(funcContext.get(Context.EXEC_RESULT), max + 1)
+      assert.equal(result, max + 1)
     } finally {
+      mainLogger.log("stopped")
       main.leave()
     }
   })
 
-  test("execute async function", async () => {
-    const main = new Context("main")
-    const asyncFunc = async (count) => {
+  test("execute async function", async (t) => {
+    const main = new Context(t.name)
+    const asyncFunc = async (logger, count) => {
       for (let i = 0; i < count; i++) {
-        console.log(i)
+        logger.log(i)
       }
       return count + 1
     }
     const max = 6
-    const asyncFuncContext = await main.execAsync(asyncFuncContext => {
+    const result = await main.execAsync(asyncFuncContext => {
       const funcLogger = ConsoleContextLogger.from(asyncFuncContext)
       funcLogger.log("starting")
-      return asyncFunc(max)
+      return asyncFunc(funcLogger, max)
     })
-    assert.equal(asyncFuncContext.get(Context.EXEC_RESULT), max + 1)
+    assert.equal(result, max + 1)
   })
 })

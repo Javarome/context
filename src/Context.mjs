@@ -1,9 +1,27 @@
 import {Assert} from "./error/Assert.js"
 
 export class Context {
+  /**
+   * @readonly
+   * @type {"started"}
+   */
   static STATUS_STARTED = "started"
+
+  /**
+   * @readonly
+   * @type {"stopped"}
+   */
   static STATUS_STOPPED = "stopped"
+
+  /**
+   * @readonly
+   * @type {"exec$result"}
+   */
   static EXEC_RESULT = "exec$result"
+
+  /**
+   * @type {number}
+   */
   static #anonymousFuncCounter = 0
 
   /**
@@ -39,10 +57,11 @@ export class Context {
   #parent
 
   /**
+   * Creates a new context.
    *
-   * @param {string} name
-   * @param {Map} data
-   * @param {Context} [parent]
+   * @param {string} name The context name.
+   * @param {Map} data Context initial data.
+   * @param {Context} [parent] The parent context, if any.
    */
   constructor(name, data = new Map(), parent) {
     this.#name = name
@@ -97,8 +116,8 @@ export class Context {
   /**
    * @return {string[]}
    */
-  get names(){
-    return [...(this.parent ? this.parent.names: []), this.name]
+  get names() {
+    return [...(this.parent ? this.parent.names : []), this.name]
   }
 
   get status() {
@@ -141,18 +160,16 @@ export class Context {
    * @param {(Context) => {}} func
    * @param {string} funcContextName
    * @param {Map} data
-   * @return {Context}
+   * @return {any}
    */
   exec(func, funcContextName = Context.defaultName(func), data = new Map()) {
     this.#checkNotFinished()
     const funcContext = this.enter(funcContextName, data)
     try {
-      const result = func(funcContext)
-      funcContext.set(Context.EXEC_RESULT, result)
+      return func(funcContext)
     } finally {
       funcContext.leave()
     }
-    return funcContext
   }
 
   /**
@@ -172,9 +189,6 @@ export class Context {
     this.#checkNotFinished()
     const asyncContext = this.enter(asyncContextName, data)
     const asyncPromise = executor(asyncContext)
-    asyncPromise.then(result => {
-      asyncContext.set(Context.EXEC_RESULT, result)
-    }).finally(() => asyncContext.leave())
-    return asyncContext
+    return asyncPromise.finally(() => asyncContext.leave())
   }
 }
