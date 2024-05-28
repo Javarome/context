@@ -124,7 +124,7 @@ export class Context {
     return this.#status
   }
 
-  #checkNotFinished() {
+  checkAlive() {
     Assert.notEqual(this.#status, Context.STATUS_STOPPED, `Context "${this.name}" is ${Context.STATUS_STOPPED}`)
   }
 
@@ -134,19 +134,23 @@ export class Context {
    * @return {Context}
    */
   enter(otherName, data = new Map()) {
-    this.#checkNotFinished()
+    this.checkAlive()
     return new Context(otherName, data, this)
   }
 
   leave() {
-    this.#checkNotFinished()
+    this.checkAlive()
     this.#timeEnd = Date.now()
     this.#status = Context.STATUS_STOPPED
     return this.parent
   }
 
-  static defaultName(func) {
-    return func.name || "$" + Context.#anonymousFuncCounter++
+  /**
+   * @param {any} func
+   * @return {string}
+   */
+  static getName(func) {
+    return typeof func === "string" ? func : func.name || "$" + Context.#anonymousFuncCounter++
   }
 
   /**
@@ -162,8 +166,8 @@ export class Context {
    * @param {Map} data
    * @return {any}
    */
-  exec(func, funcContextName = Context.defaultName(func), data = new Map()) {
-    this.#checkNotFinished()
+  exec(func, funcContextName = Context.getName(func), data = new Map()) {
+    this.checkAlive()
     const funcContext = this.enter(funcContextName, data)
     try {
       return func(funcContext)
@@ -180,13 +184,13 @@ export class Context {
    * 3. Whether the function succeeds or fails, the sub-context is left.
    *
    * @see {leave}
-   * @param {string} asyncContextName
    * @param {(Context) => Promise<any>} executor
+   * @param {string} asyncContextName
    * @param {Map} data
    * @return {Promise<Context>}
    */
-  async execAsync(executor, asyncContextName = Context.defaultName(executor), data = new Map()) {
-    this.#checkNotFinished()
+  async execAsync(executor, asyncContextName = Context.getName(executor), data = new Map()) {
+    this.checkAlive()
     const asyncContext = this.enter(asyncContextName, data)
     const asyncPromise = executor(asyncContext)
     return asyncPromise.finally(() => asyncContext.leave())

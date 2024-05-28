@@ -19,20 +19,19 @@ export class Logger {
   }
 
   /**
-   * @param {string} message
+   * @param {any[]} data
    * @return void
    * @abstract
    */
-  log(message) {
+  log(...data) {
     throw NotImplementedError()
   }
 
   /**
    * @protected
-   * @param message
    * @return {string}
    */
-  format(message) {
-    return this.name + ": " + message
+  prefix() {
+    return this.name + ": "
   }
 }

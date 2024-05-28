@@ -1,7 +1,7 @@
 import {describe, test} from "node:test"
 import {Context} from "./Context.mjs"
 import assert from "node:assert"
-import {ConsoleContextLogger} from "./log/ConsoleContextLogger.js"
+import {LoggedContext} from "./log/LoggedContext.js"
 
 describe("context", () => {
 
@@ -47,43 +47,34 @@ describe("context", () => {
   })
 
   test("execute function", (t) => {
-    const main = new Context(t.name)
-    const mainLogger = ConsoleContextLogger.from(main)
+    const main = new LoggedContext(t.name)
     try {
-      mainLogger.log("starting")
-      const func = (logger, count) => {
+      main.logger.log("starting")
+      const func = (loggedContext, count) => {
         for (let i = 0; i < count; i++) {
-          logger.log(i)
+          loggedContext.logger.log(i)
         }
         return count + 1
       }
       const max = 5
-      const result = main.exec(funcContext => {
-        const funcLogger = ConsoleContextLogger.from(funcContext)
-        funcLogger.log("starting")
-        return func(funcLogger, max)
-      })
+      const result = main.exec(funcContext => func(funcContext, max))
       assert.equal(result, max + 1)
     } finally {
-      mainLogger.log("stopped")
+      main.logger.log("stopped")
       main.leave()
     }
   })
 
   test("execute async function", async (t) => {
-    const main = new Context(t.name)
-    const asyncFunc = async (logger, count) => {
+    const main = new LoggedContext(t.name)
+    const asyncFunc = async (loggedContext, count) => {
       for (let i = 0; i < count; i++) {
-        logger.log(i)
+        loggedContext.logger.log(i)
       }
       return count + 1
     }
     const max = 6
-    const result = await main.execAsync(asyncFuncContext => {
-      const funcLogger = ConsoleContextLogger.from(asyncFuncContext)
-      funcLogger.log("starting")
-      return asyncFunc(funcLogger, max)
-    })
+    const result = await main.execAsync(asyncFuncContext => asyncFunc(asyncFuncContext, max))
     assert.equal(result, max + 1)
   })
 })

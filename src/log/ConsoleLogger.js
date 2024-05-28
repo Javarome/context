@@ -8,9 +8,9 @@ export class ConsoleLogger extends Logger {
 
   /**
    *
-   * @param {string} message
+   * @param {any[]} data
    */
-  log(message) {
-    console.log(super.format(message))
+  log(...data) {
+    console.log(super.prefix(), ...data)
   }
 }
