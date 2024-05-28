@@ -1,6 +1,7 @@
 import {describe, test} from "node:test"
 import {Context} from "./Context.mjs"
 import assert from "node:assert"
+import {ConsoleContextLogger} from "./log/ConsoleContextLogger.js"
 
 describe("context", () => {
 
@@ -47,16 +48,26 @@ describe("context", () => {
 
   test("execute function", () => {
     const main = new Context("main")
-    const func = (count) => {
-      for (let i = 0; i < count; i++) {
-        console.log(i)
+    try {
+      const mainLogger = ConsoleContextLogger.from(main)
+      mainLogger.log("starting")
+      const func = (count) => {
+        for (let i = 0; i < count; i++) {
+          console.log(i)
+        }
+        return count + 1
       }
-      return count + 1
+      const max = 5
+      const funcContext = main.exec(funcContext => {
+        const funcLogger = ConsoleContextLogger.from(funcContext)
+        funcLogger.log("starting")
+        return func(max)
+      })
+      assert.equal(funcContext.status, Context.STATUS_STOPPED)
+      assert.equal(funcContext.get(Context.EXEC_RESULT), max + 1)
+    } finally {
+      main.leave()
     }
-    const max = 30
-    const funcContext = main.exec(funcContext => func(max))
-    assert.equal(funcContext.status, Context.STATUS_STOPPED)
-    assert.equal(funcContext.get("exec$result"), max + 1)
   })
 
   test("execute async function", async () => {
@@ -67,8 +78,12 @@ describe("context", () => {
       }
       return count + 1
     }
-    const max = 30
-    const asyncFuncContext = await main.execAsync(asyncFuncContext => asyncFunc(30))
-    assert.equal(asyncFuncContext.get("exec$result"), max + 1)
+    const max = 6
+    const asyncFuncContext = await main.execAsync(asyncFuncContext => {
+      const funcLogger = ConsoleContextLogger.from(asyncFuncContext)
+      funcLogger.log("starting")
+      return asyncFunc(max)
+    })
+    assert.equal(asyncFuncContext.get(Context.EXEC_RESULT), max + 1)
   })
 })

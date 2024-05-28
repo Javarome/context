@@ -1,17 +1,21 @@
-import {Assert} from "./Assert.js"
+import {Assert} from "./error/Assert.js"
 
 export class Context {
   static STATUS_STARTED = "started"
   static STATUS_STOPPED = "stopped"
+  static EXEC_RESULT = "exec$result"
+  static #anonymousFuncCounter = 0
 
   /**
    * @type {string}
    */
   #name
+
   /**
    * @type {number}
    */
   #timeStart
+
   /**
    * @type {number}
    */
@@ -33,6 +37,20 @@ export class Context {
    * @type {Context | undefined}
    */
   #parent
+
+  /**
+   *
+   * @param {string} name
+   * @param {Map} data
+   * @param {Context} [parent]
+   */
+  constructor(name, data = new Map(), parent) {
+    this.#name = name
+    this.#parent = parent
+    this.#data = data
+    this.#status = Context.STATUS_STARTED
+    this.#timeStart = Date.now()
+  }
 
   get parent() {
     return this.#parent
@@ -76,22 +94,15 @@ export class Context {
     return this.#name
   }
 
-  get status() {
-    return this.#status
+  /**
+   * @return {string[]}
+   */
+  get names(){
+    return [...(this.parent ? this.parent.names: []), this.name]
   }
 
-  /**
-   *
-   * @param {string} name
-   * @param {Map} data
-   * @param {Context} [parent]
-   */
-  constructor(name, data = new Map(), parent) {
-    this.#name = name
-    this.#parent = parent
-    this.#data = data
-    this.#status = Context.STATUS_STARTED
-    this.#timeStart = Date.now()
+  get status() {
+    return this.#status
   }
 
   #checkNotFinished() {
@@ -115,18 +126,29 @@ export class Context {
     return this.parent
   }
 
+  static defaultName(func) {
+    return func.name || "$" + Context.#anonymousFuncCounter++
+  }
+
   /**
+   * Execute a function in a sub-context.
+   *
+   * 1. A new sub-context is created;
+   * 2. The function is executed. If it succeeds, the result, if any, is stored in its context as Context.EXEC_RESULT.
+   * 3. Whether the function succeeds or fails, the sub-context is left.
+   *
+   * @see {leave}
    * @param {(Context) => {}} func
    * @param {string} funcContextName
    * @param {Map} data
    * @return {Context}
    */
-  exec(func, funcContextName = func.name, data = new Map()) {
+  exec(func, funcContextName = Context.defaultName(func), data = new Map()) {
     this.#checkNotFinished()
     const funcContext = this.enter(funcContextName, data)
     try {
       const result = func(funcContext)
-      funcContext.set("exec$result", result)
+      funcContext.set(Context.EXEC_RESULT, result)
     } finally {
       funcContext.leave()
     }
@@ -134,17 +156,24 @@ export class Context {
   }
 
   /**
+   * Execute an asynchronous function in a sub-context.
+   *
+   * 1. A new sub-context is created;
+   * 2. The function is executed. If it succeeds, the result, if any, is stored in its context as Context.EXEC_RESULT.
+   * 3. Whether the function succeeds or fails, the sub-context is left.
+   *
+   * @see {leave}
    * @param {string} asyncContextName
    * @param {(Context) => Promise<any>} executor
    * @param {Map} data
    * @return {Promise<Context>}
    */
-  async execAsync(executor, asyncContextName = executor.name, data = new Map()) {
+  async execAsync(executor, asyncContextName = Context.defaultName(executor), data = new Map()) {
     this.#checkNotFinished()
     const asyncContext = this.enter(asyncContextName, data)
     const asyncPromise = executor(asyncContext)
     asyncPromise.then(result => {
-      asyncContext.set("exec$result", result)
+      asyncContext.set(Context.EXEC_RESULT, result)
     }).finally(() => asyncContext.leave())
     return asyncContext
   }
