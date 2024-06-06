@@ -1,4 +1,4 @@
-import {NotImplementedError} from "../error/NotImplementedError.js"
+import {NotImplementedError} from "../error/NotImplementedError.mjs"
 
 export class Logger {
   /**

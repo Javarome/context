@@ -1,7 +1,7 @@
 import {describe, test} from "node:test"
 import {Context} from "./Context.mjs"
 import assert from "node:assert"
-import {LoggedContext} from "./log/LoggedContext.js"
+import {LoggedContext} from "./log/index.mjs"
 
 describe("context", () => {
 

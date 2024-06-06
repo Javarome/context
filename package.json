@@ -1,11 +1,14 @@
 {
   "name": "@javarome/context",
   "type": "module",
-  "version": "0.1.0",
-  "description": "",
+  "version": "1.0.0",
+  "description": "Context-management library",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prebuild": "npm install && npm test",
+    "build": "rm -Rf dist && cp -R src dist && cp README.md dist && cp package*.json dist",
+    "test": "node --test",
+    "publish": "npm run build && cd dist && npm publish && cd .."
   },
   "repository": {
     "type": "git",

@@ -1,5 +1,5 @@
-import {Context} from "../Context.mjs"
-import {ConsoleContextLogger} from "./ConsoleContextLogger.js"
+import { Context } from "../Context.mjs"
+import { ConsoleLogger } from "./ConsoleLogger.mjs"
 
 export class LoggedContext extends Context {
   /**
@@ -16,7 +16,7 @@ export class LoggedContext extends Context {
    */
   constructor(name, data = new Map(), parent, logger) {
     super(name, data, parent)
-    this.logger = logger || ConsoleContextLogger.from(this)
+    this.logger = logger || new ConsoleLogger(this.names.join("-"))
   }
 
   enter(otherName, data = new Map()) {

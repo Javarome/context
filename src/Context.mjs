@@ -1,4 +1,4 @@
-import {Assert} from "./error/Assert.js"
+import {Assert} from "./error/Assert.mjs"
 
 export class Context {
   /**
